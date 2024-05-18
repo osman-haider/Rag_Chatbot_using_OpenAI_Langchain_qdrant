@@ -74,16 +74,10 @@ async def read_root(request: Request):
 
 @app.post("/get_response")
 async def get_response(query: str = Form(...)):
-    relevant_docs = db.similarity_search(query)
-    context = ""
-    relevant_images = []
-    for d in relevant_docs:
-        if d.metadata['type'] == 'text':
-            context += '[text]' + d.metadata['original_content']
-        elif d.metadata['type'] == 'table':
-            context += '[table]' + d.metadata['original_content']
-        elif d.metadata['type'] == 'image':
-            context += '[image]' + d.page_content
-            relevant_images.append(d.metadata['original_content'])
-    result = qa_chain.run({'context': context, 'question': query})
-    return JSONResponse({"relevant_images": relevant_images[0], "result": result})
+    try:
+        relevant_docs = db.similarity_search(query)
+        context = ''.join(d['page_content'] for d in relevant_docs if 'page_content' in d)
+        result = qa_chain.run({'context': context, 'question': query})
+        return JSONResponse({"result": result})
+    except Exception as e:
+        return JSONResponse({"error": str(e)})
