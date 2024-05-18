@@ -1,0 +1,10 @@
+torch
+langchain
+fastapi
+uvicorn
+pypdf
+PyPDF2
+jinja2
+qdrant-client
+python-multipart
+aiofiles
