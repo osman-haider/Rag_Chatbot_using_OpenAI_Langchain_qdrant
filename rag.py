@@ -1,7 +1,4 @@
-from langchain import PromptTemplate
-from langchain.chains.llm import LLMChain
 from langchain_core.runnables import RunnableSequence
-from langchain_openai import ChatOpenAI
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -52,13 +49,9 @@ client = QdrantClient(url=url, prefer_grpc=False)
 
 db = Qdrant(client=client, embeddings=embeddings, collection_name="vector_db")
 
-prompt_template = """
-Use the following pieces of information to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-Context: {context}
-Question: {question}
-Only return the helpful answer below and nothing else.
-Helpful answer:
-"""
+prompt_template = """Use the following pieces of information to answer the user's question. If you don't know the 
+answer, just say that you don't know, don't try to make up an answer. Context: {context} Question: {question} Only 
+return the helpful answer below and nothing else. Helpful answer:"""
 
 prompt = OpenAIPrompt(template=prompt_template, input_variables=['context', 'question'])
 

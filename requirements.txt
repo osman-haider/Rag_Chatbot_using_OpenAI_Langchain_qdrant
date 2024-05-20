@@ -1,6 +1,6 @@
 torch
-langchain
-fastapi
+langchain~=0.2.0
+fastapi~=0.111.0
 uvicorn
 pypdf
 PyPDF2
@@ -8,3 +8,5 @@ jinja2
 qdrant-client
 python-multipart
 aiofiles
+python-dotenv~=1.0.1
+starlette~=0.37.2
