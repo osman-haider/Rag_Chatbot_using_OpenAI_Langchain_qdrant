@@ -1,5 +1,6 @@
 from langchain import PromptTemplate
 from langchain.chains.llm import LLMChain
+from langchain_core.runnables import RunnableSequence
 from langchain_openai import ChatOpenAI
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
@@ -9,8 +10,8 @@ from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import Qdrant
 from qdrant_client import QdrantClient
+from langchain.llms import OpenAI
 import os
-
 from starlette.responses import JSONResponse
 
 # Load environment variables
@@ -59,13 +60,18 @@ Only return the helpful answer below and nothing else.
 Helpful answer:
 """
 
-prompt = PromptTemplate(template=prompt_template, input_variables=['context', 'question'])
+prompt = OpenAIPrompt(template=prompt_template, input_variables=['context', 'question'])
 
 
-qa_chain = LLMChain(llm=ChatOpenAI(model="gpt-4", api_key=api_key, max_tokens=1024),
-                    prompt=prompt)
+# Initialize the language model with OpenAI
+openai_llm = OpenAI(model="gpt-4", api_key=api_key, max_tokens=1024)
 
 
+# qa_chain = LLMChain(llm=ChatOpenAI(model="gpt-4", api_key=api_key, max_tokens=1024),
+#                     prompt=prompt)
+
+# Create a runnable sequence with the prompt followed by the LLM
+qa_sequence = RunnableSequence(tasks=[prompt, openai_llm])
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -85,7 +91,7 @@ async def get_response(query: str = Form(...)):
         # for doc in relevant_docs:
         #     print(doc.page_content)
         #     print('-'*39)
-        result = qa_chain.invoke({'context': context, 'question': query})
+        result = qa_sequence.run({'context': context, 'question': query})
 
         return JSONResponse({"result": result})
     except Exception as e:
