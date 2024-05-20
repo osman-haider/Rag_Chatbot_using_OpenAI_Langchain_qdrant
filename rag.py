@@ -1,13 +1,13 @@
 from langchain import PromptTemplate
 from langchain.chains.llm import LLMChain
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Qdrant
+from langchain_openai import OpenAIEmbeddings
+from langchain_qdrant import Qdrant
 from qdrant_client import QdrantClient
 import os
 
@@ -62,8 +62,8 @@ Helpful answer:
 prompt = PromptTemplate(template=prompt_template, input_variables=['context', 'question'])
 
 
-qa_chain = LLMChain(llm=ChatOpenAI(model="gpt-4", api_key = api_key, max_tokens=1024),
-                    prompt=PromptTemplate.from_template(prompt_template))
+qa_chain = LLMChain(llm=ChatOpenAI(model="gpt-4", api_key=api_key, max_tokens=1024),
+                    prompt=prompt)
 
 
 
@@ -85,6 +85,7 @@ async def get_response(query: str = Form(...)):
         # for doc in relevant_docs:
         #     print(doc.page_content)
         #     print('-'*39)
+        result = qa_chain.invoke({'context': context, 'question': query})
 
         return JSONResponse({"result": result})
     except Exception as e:
