@@ -76,8 +76,16 @@ async def read_root(request: Request):
 async def get_response(query: str = Form(...)):
     try:
         relevant_docs = db.similarity_search(query)
-        context = ''.join(d['page_content'] for d in relevant_docs if 'page_content' in d)
-        result = qa_chain.run({'context': context, 'question': query})
+        # print(relevant_docs)
+        # print(len(relevant_docs))
+        # print('\n\n\n', '-'*39)
+
+        context = ''.join(d.page_content for d in relevant_docs)
+        # print(context)
+        # for doc in relevant_docs:
+        #     print(doc.page_content)
+        #     print('-'*39)
+
         return JSONResponse({"result": result})
     except Exception as e:
         return JSONResponse({"error": str(e)})
