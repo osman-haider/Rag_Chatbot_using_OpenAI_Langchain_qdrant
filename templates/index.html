@@ -108,7 +108,8 @@
                 }
 
                 const data = await response.json();
-                document.getElementById('response').innerHTML = `<p>${data.answer}</p><br><pre><b>Context: </b> ${data.source_document}</pre><br><pre><b>Source Document: </b> ${data.doc}</pre>`;
+                document.getElementById('response').innerHTML = `<p>${data.result}</p>`;
+
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('response').innerHTML = '<p>Error processing your request</p>';
