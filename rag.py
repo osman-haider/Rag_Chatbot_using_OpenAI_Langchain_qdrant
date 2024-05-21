@@ -4,12 +4,15 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
-from langchain_qdrant import Qdrant
-from qdrant_client import QdrantClient
-from langchain.llms import OpenAI
 import os
 from starlette.responses import JSONResponse
+from langchain.prompts import PromptTemplate
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Qdrant
+import qdrant_client
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+import os
 
 # Load environment variables
 load_dotenv()
@@ -45,7 +48,7 @@ config = {
 embeddings = OpenAIEmbeddings(api_key=api_key)
 
 url = "http://localhost:6333"
-client = QdrantClient(url=url, prefer_grpc=False)
+client = qdrant_client.QdrantClient(url=url, prefer_grpc=False)
 
 db = Qdrant(client=client, embeddings=embeddings, collection_name="vector_db")
 
@@ -53,18 +56,18 @@ prompt_template = """Use the following pieces of information to answer the user'
 answer, just say that you don't know, don't try to make up an answer. Context: {context} Question: {question} Only 
 return the helpful answer below and nothing else. Helpful answer:"""
 
-prompt = OpenAIPrompt(template=prompt_template, input_variables=['context', 'question'])
+prompt = PromptTemplate(input_variables=['context', 'question'], template=prompt_template)
 
 
 # Initialize the language model with OpenAI
-openai_llm = OpenAI(model="gpt-4", api_key=api_key, max_tokens=1024)
+openai_llm = OpenAI(model="gpt-3.5-turbo-instruct", api_key=api_key, max_tokens=1024)
 
 
 # qa_chain = LLMChain(llm=ChatOpenAI(model="gpt-4", api_key=api_key, max_tokens=1024),
 #                     prompt=prompt)
 
 # Create a runnable sequence with the prompt followed by the LLM
-qa_sequence = RunnableSequence(tasks=[prompt, openai_llm])
+qa_sequence = RunnableSequence(prompt, openai_llm)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -75,17 +78,10 @@ async def read_root(request: Request):
 async def get_response(query: str = Form(...)):
     try:
         relevant_docs = db.similarity_search(query)
-        # print(relevant_docs)
-        # print(len(relevant_docs))
-        # print('\n\n\n', '-'*39)
-
         context = ''.join(d.page_content for d in relevant_docs)
-        # print(context)
-        # for doc in relevant_docs:
-        #     print(doc.page_content)
-        #     print('-'*39)
-        result = qa_sequence.run({'context': context, 'question': query})
-
+        input_data = {'context': context, 'question': query}
+        result = qa_sequence.invoke(input_data)
+        # print(result)
         return JSONResponse({"result": result})
     except Exception as e:
         return JSONResponse({"error": str(e)})
